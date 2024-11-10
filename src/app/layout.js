@@ -1,6 +1,6 @@
 import './globals.css'
 import { prompt } from '@/components/shared/fonts'
-import { APP_DESCRIPTION, APP_NAME, SERVER_URL } from '@/lip/constants'
+import { APP_DESCRIPTION, APP_NAME, SERVER_URL } from '@/lib/constants'
 // import { ThemeProvider } from 'next-themes'
 
 export const metadata = {

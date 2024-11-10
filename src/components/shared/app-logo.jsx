@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { prompt } from './fonts'
 import Image from 'next/image'
-import { APP_NAME } from '@/lip/constants'
+import { APP_NAME } from '@/lib/constants'
 
 export default function AppLogo() {
     return (
