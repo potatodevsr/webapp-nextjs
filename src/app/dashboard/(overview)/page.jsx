@@ -2,6 +2,8 @@ import { prompt } from "@/components/shared/fonts"
 import { CardsSkeleton, RevenueChartSkeleton, LatestInvoicesSkeleton } from "@/components/shared/skeletons"
 import { Suspense } from "react"
 import StatCardsWrapper from "@/components/shared/dashboard/stat-cards-wrapper"
+import RevenueChartWrapper from "@/components/shared/dashboard/revenue-chart-wrapper"
+
 export default async function Page() {
     return (
         <main>
@@ -14,7 +16,9 @@ export default async function Page() {
                 </Suspense>
             </div>
             <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-4 lg:grid-cols-8">
-                <RevenueChartSkeleton />
+                <Suspense fallback={<RevenueChartSkeleton />}>
+                    <RevenueChartWrapper />
+                </Suspense>
                 <LatestInvoicesSkeleton />
             </div>
         </main>
