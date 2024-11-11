@@ -12,3 +12,9 @@ export function capitalizeFirstLetter(text) {
     return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
+export const formatCurrency = (amount) => {
+    return (amount / 100).toLocaleString('th-TH', {
+        style: 'currency',
+        currency: 'THB',
+    })
+}

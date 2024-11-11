@@ -10,6 +10,7 @@ import { ArrowRightIcon } from 'lucide-react'
 
 
 export default function Home() {
+  // test api/users
   useEffect(() => {
     const fetchData = async () => {
       try {
