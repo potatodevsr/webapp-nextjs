@@ -1,3 +1,6 @@
+'use client'
+
+import { useEffect } from "react";
 import Image from "next/image";
 import AppLogo from "@/components/shared/app-logo";
 import { prompt } from '../components/shared/fonts'
@@ -5,9 +8,22 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRightIcon } from 'lucide-react'
 
+
 export default function Home() {
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await fetch('/api/users')
+        const response = data.json()
+        console.log(response);
+      } catch (error) {
+        console.log(error);
+      }
+      fetchData()
+    }
+  }, [])
   return (
-    <main className="flex min-h-screen flex-col ">
+    <main className="flex min-h-screen flex-col " >
       <div className="flex h-20 shrink-0 items-center rounded-lg p-4 md:h-40 bg-secondary">
         <AppLogo />
       </div>
