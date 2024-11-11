@@ -1,7 +1,7 @@
 import './globals.css'
 import { prompt } from '@/components/shared/fonts'
 import { APP_DESCRIPTION, APP_NAME, SERVER_URL } from '@/lib/constants'
-// import { ThemeProvider } from 'next-themes'
+import { ThemeProvider } from 'next-themes'
 
 export const metadata = {
   title: {
@@ -16,14 +16,14 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${prompt.className} antialiased`}>
-        {/* <ThemeProvider
+        <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
-        > */}
-        {children}
-        {/* </ThemeProvider> */}
+        >
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   )

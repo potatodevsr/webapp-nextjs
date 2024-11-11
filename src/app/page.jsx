@@ -1,7 +1,9 @@
 import Image from "next/image";
 import AppLogo from "@/components/shared/app-logo";
-// import { prompt } from './fonts'
+import { prompt } from '../components/shared/fonts'
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { ArrowRightIcon } from 'lucide-react'
 
 export default function Home() {
   return (
@@ -12,16 +14,16 @@ export default function Home() {
       <div className="mt-4 flex grow flex-col gap-4 md:flex-row">
         <div className="flex flex-col justify-center gap-6 rounded-lg  px-6 py-10 md:w-2/5 md:px-20">
           <p
-            className="text-xl md:text-3xl md:leading-normal"
+            className={`${prompt.className} text-xl md:text-3xl md:leading-normal`}
           >
             <strong>Welcome to Next 15 Admin Dashboard.</strong>
           </p>
-          {/* <Button asChild className="w-1/2"> */}
-          <Link href="/login">
-            <span>Log in</span>
-            {/* <ArrowRightIcon className="w-6" /> */}
-          </Link>
-          {/* </Button> */}
+          <Button asChild className="w-1/2">
+            <Link href="/login">
+              <span>Log in</span>
+              <ArrowRightIcon className="w-6" />
+            </Link>
+          </Button>
         </div>
         <div className="flex items-center justify-center p-6 md:w-3/5 md:px-28 md:py-12">
           <Image
