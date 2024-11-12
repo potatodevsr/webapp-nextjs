@@ -3,6 +3,7 @@ import { CardsSkeleton, RevenueChartSkeleton, LatestInvoicesSkeleton } from "@/c
 import { Suspense } from "react"
 import StatCardsWrapper from "@/components/shared/dashboard/stat-cards-wrapper"
 import RevenueChartWrapper from "@/components/shared/dashboard/revenue-chart-wrapper"
+import LatestInvoices from "@/components/shared/dashboard/latest-invoices"
 
 export default async function Page() {
     return (
@@ -16,10 +17,14 @@ export default async function Page() {
                 </Suspense>
             </div>
             <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-4 lg:grid-cols-8">
+                {/* RevenueChartSkeleton */}
                 <Suspense fallback={<RevenueChartSkeleton />}>
                     <RevenueChartWrapper />
                 </Suspense>
-                <LatestInvoicesSkeleton />
+                {/* LatestInvoicesSkeleton */}
+                <Suspense fallback={<LatestInvoicesSkeleton />}>
+                    <LatestInvoices />
+                </Suspense>
             </div>
         </main>
     )

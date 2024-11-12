@@ -13,7 +13,7 @@ import {
 
 export default function RevenueChart({ revenue }) {
     if (!revenue || revenue.length === 0) {
-        return <p className="mt-4 text-gray-400">No data available.</p>
+        return <p className="mt-4 text-gray-200">No data available.</p>
     }
 
     return (
