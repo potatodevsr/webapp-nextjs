@@ -1,12 +1,12 @@
 import AppLogo from "../app-logo"
 import NavLinks from "./nav-links"
-import ModeToggle from "./mode-toggle"
+// import ModeToggle from "./mode-toggle"
 import { Button } from "@/components/ui/button"
 import { PowerIcon } from 'lucide-react'
 
 export default function SideNav() {
     return (
-        <div className="flex flex-col h-full p-3">
+        <div className="flex flex-col h-full p-3 bg-gray-200">
             <div>
                 <AppLogo />
             </div>
@@ -16,7 +16,7 @@ export default function SideNav() {
                 <div className="h-auto w-full grow rounded-md md:block"></div>
 
                 <div className="flex md:flex-col ">
-                    <ModeToggle />
+                    {/* <ModeToggle /> */}
                     <form
                         action={async () => {
                             'use server'

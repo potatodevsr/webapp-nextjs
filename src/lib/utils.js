@@ -33,7 +33,6 @@ export const formatDateToLocal = (dateStr, locale = 'th-TH') => {
 // const formattedDate = formatDateToLocal('2023-09-12')
 // console.log('Test formattedDate =>', formattedDate)
 
-
 export const generatePagination = (currentPage, totalPages) => {
     // ถ้าจำนวนหน้าทั้งหมด (totalPages) มีน้อยกว่าหรือเท่ากับ 7 จะทำการแสดงหมายเลขหน้าทั้งหมด โดยไม่มีการใช้สัญลักษณ์ ... ex. [1, 2, 3, 4, 5]
     if (totalPages <= 7) {
@@ -60,4 +59,8 @@ export const generatePagination = (currentPage, totalPages) => {
         '...',
         totalPages,
     ]
+}
+
+export function includesIgnoreCase(text, query) {
+    return text.toLowerCase().includes(query.toLowerCase());
 }

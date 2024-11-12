@@ -1,28 +1,32 @@
 'use server'
 
-import { invoices, customers, revenue, users } from '@/lib/placeholder-data';
-import { formatCurrency } from '@/lib/utils'; // Import formatCurrency
+import { revenue } from '@/lib/placeholder-data';
+import { formatCurrency, includesIgnoreCase } from '@/lib/utils';
 import { ITEMS_PER_PAGE } from '../constants';
+import { createConnection } from '@/lib/db';
 
 export async function fetchCardData() {
     try {
-        const numberOfInvoices = invoices.length;
-        const numberOfCustomers = customers.length;
+        const db = await createConnection();
 
-        const invoiceStatus = invoices.reduce(
-            (acc, invoice) => {
-                if (invoice.status === 'paid') {
-                    acc.paid += invoice.amount;
-                } else if (invoice.status === 'pending') {
-                    acc.pending += invoice.amount;
-                }
-                return acc;
-            },
-            { paid: 0, pending: 0 }
-        );
+        // ดึงจำนวนใบแจ้งหนี้ทั้งหมด
+        const [invoiceCountRows] = await db.query('SELECT COUNT(*) AS count FROM invoices');
+        const numberOfInvoices = invoiceCountRows[0].count;
 
-        const totalPaidInvoices = formatCurrency(invoiceStatus.paid);
-        const totalPendingInvoices = formatCurrency(invoiceStatus.pending);
+        // ดึงจำนวนลูกค้าทั้งหมด
+        const [customerCountRows] = await db.query('SELECT COUNT(*) AS count FROM customers');
+        const numberOfCustomers = customerCountRows[0].count;
+
+        // ดึงยอดรวมใบแจ้งหนี้ที่จ่ายแล้วและที่ค้างอยู่
+        const [invoiceStatusRows] = await db.query(`
+            SELECT 
+                SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) AS paid,
+                SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END) AS pending
+            FROM invoices
+        `);
+
+        const totalPaidInvoices = formatCurrency(invoiceStatusRows[0].paid || 0);
+        const totalPendingInvoices = formatCurrency(invoiceStatusRows[0].pending || 0);
 
         return {
             numberOfCustomers,
@@ -47,80 +51,62 @@ export async function fetchRevenue() {
 
 export async function fetchLatestInvoices() {
     try {
-        const joinedData = invoices
-            .map(invoice => {
-                const customer = customers.find(cust => cust.id === invoice.customer_id);
-                if (customer) {
-                    return {
-                        amount: invoice.amount,
-                        name: customer.name,
-                        image_url: customer.image_url,
-                        email: customer.email,
-                        id: invoice.customer_id,
-                        status: invoice.status,
-                        date: invoice.date,
-                    };
-                }
-                return null;
-            })
-            .filter(invoice => invoice !== null);
+        const db = await createConnection();
 
-        joinedData.sort((a, b) => new Date(b.date) - new Date(a.date));
+        // Query สำหรับดึงใบแจ้งหนี้ล่าสุดพร้อมกับข้อมูลลูกค้า (จำนวน 5 รายการล่าสุด)
+        const [rows] = await db.query(`
+            SELECT 
+                invoices.amount,
+                invoices.status,
+                invoices.date,
+                invoices.customer_id AS id,
+                customers.name,
+                customers.email,
+                customers.image_url
+            FROM invoices
+            JOIN customers ON invoices.customer_id = customers.id
+            ORDER BY invoices.date DESC
+            LIMIT 5
+        `);
 
-        const limitedData = joinedData.slice(0, 5);
-
-        const latestInvoices = limitedData.map(invoice => ({
+        // จัดรูปแบบข้อมูล โดยแปลงยอดเงินให้เป็นรูปแบบสกุลเงิน
+        const latestInvoices = rows.map(invoice => ({
             ...invoice,
             amount: formatCurrency(invoice.amount),
         }));
 
         return latestInvoices;
-
     } catch (error) {
         console.error("Error fetching Latest Invoices data:", error);
-        throw new Error("Failed to fetch Latest Invoices  data.");
+        throw new Error("Failed to fetch Latest Invoices data.");
     }
 }
 
 export async function fetchFilteredInvoices(query, currentPage) {
     const offset = (currentPage - 1) * ITEMS_PER_PAGE;
     try {
-        const filteredData = invoices
-            .map(invoices => {
-                const customer = customers.find(cust => cust.id === invoice.customer_id);
-                if (!customer) {
-                    return {
-                        id: invoices.customer_id,
-                        amount: invoices.amount,
-                        name: customer.name,
-                        email: customer.email,
-                        image_url: customer.image_url,
-                        status: invoices.status,
-                        date: invoices.date,
-                    };
+        const db = await createConnection();
 
-                }
-                return null;
-            })
-            .filter(invoice => {
-                if (!invoice) return false;
-                return (
-                    includesIgnoreCase(invoice.name, query) ||
-                    includesIgnoreCase(invoice.email, query) ||
-                    includesIgnoreCase(invoice.status, query)
-                );
-            });
+        // สร้าง SQL Query เพื่อดึงข้อมูลจากฐานข้อมูลโดยเชื่อมโยงตาราง customers และ invoices
+        const sql = `
+            SELECT invoices.customer_id AS id, invoices.amount, invoices.status, invoices.date,
+                   customers.name, customers.email, customers.image_url
+            FROM invoices
+            JOIN customers ON invoices.customer_id = customers.id
+            WHERE (customers.name LIKE ? OR customers.email LIKE ? OR invoices.status LIKE ?)
+            ORDER BY invoices.date DESC
+            LIMIT ? OFFSET ?
+        `;
 
-        filteredData.sort((a, b) => new Date(b.date) - new Date(a.date));
+        // เตรียม query เพื่อค้นหาคำที่เกี่ยวข้องใน name, email, หรือ status
+        const searchParam = `%${query}%`;
+        const [rows] = await db.query(sql, [searchParam, searchParam, searchParam, ITEMS_PER_PAGE, offset]);
 
-        // Paginate the data
-        const paginatedData = filteredData.slice(offset, offset + ITEMS_PER_PAGE);
-
-        const formattedInvoices = paginatedData.map(invoice => ({
+        // แปลง amount ให้เป็นรูปแบบสกุลเงินไทย
+        const formattedInvoices = rows.map(invoice => ({
             ...invoice,
             amount: formatCurrency(invoice.amount),
         }));
-
 
         return formattedInvoices;
     } catch (error) {
@@ -131,56 +117,52 @@ export async function fetchFilteredInvoices(query, currentPage) {
 
 export async function fetchInvoicesPages(query) {
     try {
+        const db = await createConnection();
 
-        const filteredData = invoices
-            .map(invoice => {
-                const customer = customers.find(cust => cust.id === invoice.customer_id);
-                if (customer) {
-                    return {
-                        id: invoice.customer_id,
-                        amount: invoice.amount,
-                        name: customer.name,
-                        email: customer.email,
-                        image_url: customer.image_url,
-                        status: invoice.status,
-                        date: invoice.date,
-                    };
-                }
-                return null;
-            })
-            .filter(invoice => {
-                if (!invoice) return false;
-                // Apply the filter based on the query
-                return (
-                    includesIgnoreCase(invoice.name, query) ||
-                    includesIgnoreCase(invoice.email, query) ||
-                    includesIgnoreCase(invoice.status, query)
-                );
-            });
+        // ดึงข้อมูลจากฐานข้อมูล invoices และ customers
+        const [rows] = await db.query(`
+            SELECT invoices.customer_id AS id, invoices.amount, invoices.status, invoices.date,
+                   customers.name, customers.email, customers.image_url
+            FROM invoices
+            INNER JOIN customers ON invoices.customer_id = customers.id
+        `);
 
-        // Calculate total pages
+        // กรองข้อมูลตาม query ที่ได้รับ
+        const filteredData = rows.filter(invoice => {
+            return (
+                includesIgnoreCase(invoice.name, query) ||
+                includesIgnoreCase(invoice.email, query) ||
+                includesIgnoreCase(invoice.status, query)
+            );
+        });
+
+        // คำนวณจำนวนหน้าโดยใช้ ITEMS_PER_PAGE
         const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
         return totalPages;
+
     } catch (error) {
         console.error('Error calculating total pages:', error);
         throw new Error('Failed to calculate total number of invoices pages.');
     }
 }
 
-
 export async function deleteInvoice(id) {
     try {
-        const index = invoices.findIndex(invoice => invoice.customer_id === id);
-        if (index === -1) {
+        const db = await createConnection();
+
+        // ลบข้อมูลจากฐานข้อมูล invoices ตาม customer_id ที่ได้รับ
+        const [result] = await db.query('DELETE FROM invoices WHERE customer_id = ?', [id]);
+
+        // ตรวจสอบว่ามีการลบข้อมูลหรือไม่
+        if (result.affectedRows === 0) {
             throw new Error('Invoice not found');
         }
-        invoices.splice(index, 1);
 
-        // If needed, revalidate or refresh any paths (only applicable in server environments)
-        // revalidatePath('/dashboard/invoices'); // Uncomment if you're using a dynamic cache strategy
-        return { message: 'Deleted Invoice' }
+        revalidatePath('/dashboard/invoices');
+        return { message: 'Deleted Invoice' };
     } catch (error) {
         console.error("Error deleting invoice:", error);
         return { message: 'Error: Failed to delete invoice.' };
     }
 }
+

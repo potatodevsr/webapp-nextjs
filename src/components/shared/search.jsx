@@ -3,7 +3,6 @@ import { SearchIcon } from 'lucide-react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { useDebouncedCallback } from 'use-debounce'
 
-
 export default function Search({ placeholder }) {
     const searchParams = useSearchParams()
     const { replace } = useRouter()
